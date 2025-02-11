@@ -11,18 +11,24 @@ mp_drawing = mp.solutions.drawing_utils
 DATASET_PATH = "dataset"
 os.makedirs(DATASET_PATH, exist_ok=True)
 
-# Ask user for the gesture name
-gesture_name = input("Enter the name of the gesture: ").strip()
-gesture_path = os.path.join(DATASET_PATH, gesture_name)
-os.makedirs(gesture_path, exist_ok=True)
+def get_gesture_name():
+    """Function to get a new gesture name from the user."""
+    gesture_name = input("\nEnter the name of the gesture: ").strip()
+    gesture_path = os.path.join(DATASET_PATH, gesture_name)
+    os.makedirs(gesture_path, exist_ok=True)
+    return gesture_name, gesture_path
+
+# Get the first gesture name
+gesture_name, gesture_path = get_gesture_name()
 
 # Start capturing
 cap = cv2.VideoCapture(0)
 hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
 sample_num = 0
-print("Press 's' to capture a sample.")
-print("Press 'q' to exit.")
+print("Press 'S' to capture a sample.")
+print("Press 'W' to change the gesture name.")
+print("Press 'Q' to exit.")
 
 while True:
     ret, frame = cap.read()
@@ -43,8 +49,9 @@ while True:
             for lm in hand_landmarks.landmark:
                 landmarks.extend([lm.x, lm.y, lm.z])
 
-            # Save landmarks when 's' is pressed
             key = cv2.waitKey(1) & 0xFF
+
+            # Save landmarks when 'S' is pressed
             if key == ord('s'):
                 file_path = os.path.join(gesture_path, f"{sample_num}.npy")
                 np.save(file_path, np.array(landmarks))
@@ -53,10 +60,17 @@ while True:
 
     cv2.imshow("Data Collection", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    key = cv2.waitKey(1) & 0xFF
+
+    # Press 'W' to enter a new gesture name
+    if key == ord('w'):
+        gesture_name, gesture_path = get_gesture_name()
+        sample_num = 0  # Reset sample number for new gesture
+
+    # Press 'Q' to quit
+    elif key == ord('q'):
         break
 
 cap.release()
 cv2.destroyAllWindows()
-
-print(f"Data collection complete. {sample_num} samples saved for gesture: {gesture_name}.")
+print("Data collection complete.")
